@@ -1,36 +1,106 @@
-let tasks =[];
-const addTask = ()=>{
-    const taskInput = document.getElementById("taskInput");
-    const text = textInput.value.trim()
-    if(text){
-        tasks.push({text: text, complete: false});
-        updateTasksList();
+// Retrieve todo from local storage or initialize an empty array
+let todo = JSON.parse(localStorage.getItem("todo")) || [];
+const todoInput = document.getElementById("todoInput");
+const todoList = document.getElementById("todoList");
+const todoCount = document.getElementById("todoCount");
+const addButton = document.querySelector(".btn");
+const deleteButton = document.getElementById("deleteButton");
+
+// Initialize
+document.addEventListener("DOMContentLoaded", function () {
+  addButton.addEventListener("click", addTask);
+  todoInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault(); // Prevents default Enter key behavior
+      addTask();
     }
-};
-const updateTasksList = () => {
-    const taskList = document.getElementById("task-list")
-    taskList.innerHTML = ''
+  });
+  deleteButton.addEventListener("click", deleteAllTasks);
+  displayTasks();
+});
 
-    tasks.forEach((task, index) => {
-        const listItem = document.createElement("li")
-        listItem.innerHTML = `
-        <div class="taskItem">
-        <div class="task ${task.completed ? "completed" : ""}">
-        <input type="checkbox" class="checkbox" ${task.completed ? "checked": ""}/>
-        <p>${task.text}</p>
-        </div>
-        <div class="icons">
-        <i class="fas fa-pen" onClick="editTask(${index})"></i>
-        <i class="fas fa-trash" onClick="deleteTask(${index})"></i>
-        </div>
-        </div>
-        `;
-        listItem.addEventListener("change", () => toggleTaskComplete(index));
-        tasklist.appendChild(listItem);
+function addTask() {
+  const newTask = todoInput.value.trim();
+  if (newTask !== "") {
+    todo.push({ text: newTask, disabled: false });
+    saveToLocalStorage();
+    todoInput.value = "";
+    displayTasks();
+  }
+}
 
-    });
-};
-document.getElementById("newtask").addEventListener("click",function(e){
-    e.preventDefault()
-    addTask()
+function displayTasks() {
+  todoList.innerHTML = "";
+  todo.forEach((item, index) => {
+    const p = document.createElement("p");
+    p.innerHTML = `
+      <div class="todo-container">
+        <input type="checkbox" class="todo-checkbox" id="input-${index}" ${
+      item.disabled ? "checked" : ""
+    }>
+        <p id="todo-${index}" class="${
+      item.disabled ? "disabled" : ""
+    }" onclick="editTask(${index})">${item.text}</p>
+      </div>
+    `;
+    p.querySelector(".todo-checkbox").addEventListener("change", () =>
+      toggleTask(index)
+    );
+    todoList.appendChild(p);
+  });
+  todoCount.textContent = todo.length;
+}
+
+function editTask(index) {
+  const todoItem = document.getElementById(`todo-${index}`);
+  const existingText = todo[index].text;
+  const inputElement = document.createElement("input");
+
+  inputElement.value = existingText;
+  todoItem.replaceWith(inputElement);
+  inputElement.focus();
+
+  inputElement.addEventListener("blur", function () {
+    const updatedText = inputElement.value.trim();
+    if (updatedText) {
+      todo[index].text = updatedText;
+      saveToLocalStorage();
+    }
+    displayTasks();
+  });
+}
+
+function toggleTask(index) {
+  todo[index].disabled = !todo[index].disabled;
+  saveToLocalStorage();
+  displayTasks();
+}
+
+function deleteAllTasks() {
+  todo = [];
+  saveToLocalStorage();
+  displayTasks();
+}
+
+function saveToLocalStorage() {
+  localStorage.setItem("todo", JSON.stringify(todo));
+}
+
+document.getElementById("toggle-theme").addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+});
+
+function triggerConfetti() {
+  confetti({
+    particleCount: 100,
+    spread: 70,
+    origin: { y: 0.6 }
+  });
+}
+
+// Example: call when task checkbox is clicked
+document.getElementById("todoList").addEventListener("change", (e) => {
+  if (e.target.type === "checkbox" && e.target.checked) {
+    triggerConfetti();
+  }
 });
